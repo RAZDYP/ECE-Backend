@@ -20,6 +20,7 @@ const middleware = (req, res, next) => {
 }
 
 app.get('/about', middleware, (req, res) => {
+    // res.cookie("Rajdeep", 'Nath');
     res.send('This is the about page')
 }
 );

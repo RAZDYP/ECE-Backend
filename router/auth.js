@@ -1,5 +1,7 @@
 const express = require('express');
 const router = express.Router();
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
 require('../db/conn');
 const Faculty = require('../model/facultySchema');
@@ -43,18 +45,34 @@ router.post('/register', async (req, res) => {
 
 // LOGIN ROUTE
 router.post('/signin', async (req, res) => {
+    let token;
     try {
         const { email, password } = req.body;
         if (!email || !password) {
             return res.status(400).json({ error: "Please fill the data" });
         }
         const facultyLogin = await Faculty.findOne({ email: email });
-        console.log(facultyLogin);
-        if (!facultyLogin) {
-            res.status(400).json({ message: "USER ERROR" })
+        // console.log(facultyLogin);
+        if (facultyLogin) {
+            const isMatch = await bcrypt.compare(password, facultyLogin.password);
+
+            token = await facultyLogin.generateAuthToken();
+            console.log(token);
+
+            res.cookie("jwtoken", token, {
+                expires: new Date(Date.now() + 25892000000),
+                httpOnly: true
+            });
+
+            if (!isMatch) {
+                res.status(400).json({ message: "Invalid Credentials" })
+            }
+            else {
+                res.json({ message: "USER LOGIN SUCCESS" })
+            }
         }
         else {
-            res.json({ message: "USER LOGIN SUCCESS" })
+            res.status(400).json({ message: "Invalid Credentials" })
         }
     }
     catch (err) {
